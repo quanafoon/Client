@@ -48,6 +48,15 @@ class Client (private val networkMessageInterface: NetworkMessageInterface){
 
     }
 
+    fun startClass(classId: String) {
+        val content = ContentModel(
+            message = "Start Class",
+            senderIp = ip, // IP of the lecturer's device (the client)
+            classId = classId
+        )
+        sendMessage(content) // Reuse sendMessage function to notify the server
+    }
+
     fun close(){
         clientSocket.close()
     }

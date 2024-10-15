@@ -53,20 +53,24 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
                         if (receivedJson!= null){
                             Log.e("SERVER", "Received a message from client $it")
                             val clientContent = Gson().fromJson(receivedJson, ContentModel::class.java)
-                            val reversedContent = ContentModel(clientContent.message.reversed(), "192.168.49.1")
-
-                            val reversedContentStr = Gson().toJson(reversedContent)
-                            clientWriter.write("$reversedContentStr\n")
+                             // Create a ContentModel to notify all clients about the class start
+                                val startClassContent = ContentModel(
+                                    "Class has started for Class ID: ${clientContent.classID}",
+                                    "192.168.49.1", // Indicate that the message is from the server
+                                    clientContent.classID
+                                )
+                            val startClassContentStr = Gson().toJson(startClassContent)
+                            clientWriter.write("$startClassContentStr\n")
                             clientWriter.flush()
 
                             // To show the correct alignment of the items (on the server), I'd swap the IP that it came from the client
                             // This is some OP hax that gets the job done but is not the best way of getting it done.
                             val tmpIp = clientContent.senderIp
-                            clientContent.senderIp = reversedContent.senderIp
-                            reversedContent.senderIp = tmpIp
+                            clientContent.senderIp = startClassContent.senderIp
+                            startClassContent.senderIp = tmpIp
 
                             iFaceImpl.onContent(clientContent)
-                            iFaceImpl.onContent(reversedContent)
+                            iFaceImpl.onContent(startClassContent)
 
                         }
                     } catch (e: Exception){
