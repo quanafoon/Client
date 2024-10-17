@@ -18,18 +18,19 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
 
     }
 
-    private val svrSocket: ServerSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
+    private val svrSocket: ServerSocket =
+        ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
     private val clientMap: HashMap<String, Socket> = HashMap()
 
     init {
-        thread{
-            while(true){
-                try{
+        thread {
+            while (true) {
+                try {
                     val clientConnectionSocket = svrSocket.accept()
                     Log.e("SERVER", "The server has accepted a connection: ")
                     handleSocket(clientConnectionSocket)
 
-                }catch (e: Exception){
+                } catch (e: Exception) {
                     Log.e("SERVER", "An error has occurred in the server!")
                     e.printStackTrace()
                 }
@@ -38,7 +39,7 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
     }
 
 
-    private fun handleSocket(socket: Socket){
+    private fun handleSocket(socket: Socket) {
         socket.inetAddress.hostAddress?.let {
             clientMap[it] = socket
             Log.e("SERVER", "A new connection has been detected!")
@@ -47,33 +48,31 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
                 val clientWriter = socket.outputStream.bufferedWriter()
                 var receivedJson: String?
 
-                while(socket.isConnected){
-                    try{
+                while (socket.isConnected) {
+                    try {
                         receivedJson = clientReader.readLine()
-                        if (receivedJson!= null){
+                        if (receivedJson != null) {
                             Log.e("SERVER", "Received a message from client $it")
-                            val clientContent = Gson().fromJson(receivedJson, ContentModel::class.java)
-                             // Create a ContentModel to notify all clients about the class start
-                                val startClassContent = ContentModel(
-                                    "Class has started for Class ID: ${clientContent.classID}",
-                                    "192.168.49.1", // Indicate that the message is from the server
-                                    clientContent.classID
-                                )
-                            val startClassContentStr = Gson().toJson(startClassContent)
-                            clientWriter.write("$startClassContentStr\n")
+                            val clientContent =
+                                Gson().fromJson(receivedJson, ContentModel::class.java)
+                            val reversedContent =
+                                ContentModel(clientContent.message.reversed(), "192.168.49.1")
+
+                            val reversedContentStr = Gson().toJson(reversedContent)
+                            clientWriter.write("$reversedContentStr\n")
                             clientWriter.flush()
 
                             // To show the correct alignment of the items (on the server), I'd swap the IP that it came from the client
                             // This is some OP hax that gets the job done but is not the best way of getting it done.
                             val tmpIp = clientContent.senderIp
-                            clientContent.senderIp = startClassContent.senderIp
-                            startClassContent.senderIp = tmpIp
+                            clientContent.senderIp = reversedContent.senderIp
+                            reversedContent.senderIp = tmpIp
 
                             iFaceImpl.onContent(clientContent)
-                            iFaceImpl.onContent(startClassContent)
+                            iFaceImpl.onContent(reversedContent)
 
                         }
-                    } catch (e: Exception){
+                    } catch (e: Exception) {
                         Log.e("SERVER", "An error has occurred with the client $it")
                         e.printStackTrace()
                     }
@@ -82,9 +81,8 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
         }
     }
 
-    fun close(){
+    fun close() {
         svrSocket.close()
         clientMap.clear()
     }
-
 }
