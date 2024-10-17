@@ -7,10 +7,13 @@ import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -45,6 +48,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     private var server: Server? = null
     private var client: Client? = null
     private var deviceIp: String = ""
+    private lateinit var startClassBtn : Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,15 +64,17 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
 
-        peerListAdapter = PeerListAdapter(this)
-        val rvPeerList: RecyclerView= findViewById(R.id.rvPeerListing)
-        rvPeerList.adapter = peerListAdapter
-        rvPeerList.layoutManager = LinearLayoutManager(this)
 
         chatListAdapter = ChatListAdapter()
         val rvChatList: RecyclerView = findViewById(R.id.rvChat)
         rvChatList.adapter = chatListAdapter
         rvChatList.layoutManager = LinearLayoutManager(this)
+
+        startClassBtn = findViewById(R.id.startClassBtn)
+
+        startClassBtn.setOnClickListener{ view : View ->
+                createGroup(view)
+        }
     }
 
     override fun onResume() {
@@ -92,6 +98,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         wfdManager?.discoverPeers()
     }
 
+
     private fun updateUI(){
         //The rules for updating the UI are as follows:
         // IF the WFD adapter is NOT enabled then
@@ -107,22 +114,10 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val wfdNoConnectionView:ConstraintLayout = findViewById(R.id.clNoWifiDirectConnection)
         wfdNoConnectionView.visibility = if (wfdAdapterEnabled && !wfdHasConnection) View.VISIBLE else View.GONE
 
-        val rvPeerList: RecyclerView= findViewById(R.id.rvPeerListing)
-        rvPeerList.visibility = if (wfdAdapterEnabled && !wfdHasConnection && hasDevices) View.VISIBLE else View.GONE
-
         val wfdConnectedView:ConstraintLayout = findViewById(R.id.clHasConnection)
         wfdConnectedView.visibility = if(wfdHasConnection)View.VISIBLE else View.GONE
     }
 
-    fun sendMessage(view: View) {
-        val etMessage:EditText = findViewById(R.id.etMessage)
-        val etString = etMessage.text.toString()
-        val content = ContentModel(etString, deviceIp)
-        etMessage.text.clear()
-        client?.sendMessage(content)
-        chatListAdapter?.addItemToEnd(content)
-
-    }
 
     override fun onWiFiDirectStateChanged(isEnabled: Boolean) {
         wfdAdapterEnabled = isEnabled
