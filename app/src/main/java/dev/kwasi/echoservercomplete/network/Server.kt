@@ -15,11 +15,19 @@ import kotlin.concurrent.thread
 class Server(private val iFaceImpl:NetworkMessageInterface) {
     companion object {
         const val PORT: Int = 9999
+        private val clientMap: HashMap<String, Socket> = HashMap()
+
+        fun getClientMap() : HashMap<String, Socket> {
+            return clientMap
+        }
 
     }
 
-    private val svrSocket: ServerSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
-    private val clientMap: HashMap<String, Socket> = HashMap()
+
+
+    private val svrSocket: ServerSocket =
+        ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
+
 
     init {
         thread{
@@ -82,5 +90,6 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
         svrSocket.close()
         clientMap.clear()
     }
+
 
 }

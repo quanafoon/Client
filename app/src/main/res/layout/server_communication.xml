@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/ClassInformation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Class Network: "
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center_vertical"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="Network Password: "
+            android:textStyle="bold"
+            android:textSize="20sp"
+            />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="End Class"
+        android:textSize="20sp"
+        android:onClick="closeSocket"
+    />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/StudentList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_weight="1"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Student Chat - "
+                android:textSize="20sp"
+                android:textAlignment="center"
+                />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/MessageLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toTopOf="@id/llChatSend"/>
+
+            <LinearLayout
+                android:id="@+id/llChatSend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_gravity="end"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <EditText
+                    android:id="@+id/etMessage"
+                    android:layout_width="wrap_content"
+                    android:layout_weight="1"
+                    android:autofillHints="Type a message"
+                    android:inputType="textMultiLine"
+                    android:minLines="3"
+                    android:maxLines="5"
+                    android:hint="Enter message..."
+                    android:layout_height="wrap_content"
+                    />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_weight="0.4"
+                    android:text="Send"
+                    android:onClick="sendMessage"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </LinearLayout>
+
+
+</LinearLayout>

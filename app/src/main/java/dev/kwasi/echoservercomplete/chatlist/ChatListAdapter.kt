@@ -8,11 +8,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import dev.kwasi.echoservercomplete.R
 import dev.kwasi.echoservercomplete.models.ContentModel
-import dev.kwasi.echoservercomplete.peerlist.PeerListAdapter
+
 
 class ChatListAdapter : RecyclerView.Adapter<ChatListAdapter.ViewHolder>(){
     private val chatList:MutableList<ContentModel> = mutableListOf()
