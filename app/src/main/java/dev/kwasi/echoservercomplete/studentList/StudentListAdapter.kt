@@ -14,6 +14,7 @@ class StudentListAdapter: RecyclerView.Adapter<StudentListAdapter.ViewHolder>(){
     //takes clientMap and creates a list of present Student IDs
     private val studentList: MutableList<String> = Server.getClientMap().keys.toMutableList()
 
+
     //assigns view to textview in layout file
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val studentView: TextView = itemView.findViewById(R.id.StudentId)
@@ -33,6 +34,12 @@ class StudentListAdapter: RecyclerView.Adapter<StudentListAdapter.ViewHolder>(){
 
     override fun getItemCount(): Int {
         return studentList.size
+    }
+
+    fun updateList(newStudentList:Collection<String>) {
+        studentList.clear()
+        studentList.addAll(newStudentList)
+        notifyDataSetChanged()
     }
 
 }

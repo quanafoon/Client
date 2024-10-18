@@ -4,7 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:id="@+id/clHasConnection"
+    tools:context=".CommunicationActivity">
 
         <TextView
             android:id="@+id/ClassInformation"
@@ -55,7 +57,7 @@
                 android:textAlignment="center"
                 />
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/MessageLog"
+                android:id="@+id/rvChat"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintBottom_toTopOf="@id/llChatSend"/>
@@ -93,3 +95,4 @@
 
 
 </LinearLayout>
+

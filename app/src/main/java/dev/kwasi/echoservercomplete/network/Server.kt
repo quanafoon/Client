@@ -3,6 +3,8 @@ package dev.kwasi.echoservercomplete.network
 import android.util.Log
 import com.google.gson.Gson
 import dev.kwasi.echoservercomplete.models.ContentModel
+import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -17,8 +19,15 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
         const val PORT: Int = 9999
         private val clientMap: HashMap<String, Socket> = HashMap()
 
+
         fun getClientMap() : HashMap<String, Socket> {
             return clientMap
+        }
+
+        fun updateClientMap(student: String, socket: Socket) {
+            clientMap[student] = socket
+
+
         }
 
     }
@@ -49,12 +58,14 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
     private fun handleSocket(socket: Socket){
         socket.inetAddress.hostAddress?.let {
             clientMap[it] = socket
+
             Log.e("SERVER", "A new connection has been detected!")
             thread {
                 val clientReader = socket.inputStream.bufferedReader()
                 val clientWriter = socket.outputStream.bufferedWriter()
                 var receivedJson: String?
 
+               // handshake(socket, clientReader, clientWriter)
                 while(socket.isConnected){
                     try{
                         receivedJson = clientReader.readLine()
@@ -90,6 +101,29 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
         svrSocket.close()
         clientMap.clear()
     }
+
+ /*   private fun handshake(socket: Socket, clientReader: BufferedReader, clientWriter: BufferedWriter) : String {
+        clientWriter.write(Gson().toJson("Please submit student Id"))
+        clientWriter.flush()
+        val sidJson = clientReader.readLine()
+        val sid = Gson().fromJson(sidJson, ContentModel::class.java)
+        updateClientMap(sid.message, socket)
+
+        //Todo student id in class check use helper function
+        //Todo encryption exchange use helper function
+        return sid.message
+
+
+    } */
+
+    fun sendMessage(content: ContentModel,clientWriter: BufferedWriter) {
+        thread {
+            val contentAsStr:String = Gson().toJson(content)
+            clientWriter.write("$contentAsStr\n")
+            clientWriter.flush()
+        }
+    }
+
 
 
 }

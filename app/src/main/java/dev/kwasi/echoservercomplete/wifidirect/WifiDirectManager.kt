@@ -35,12 +35,12 @@ class WifiDirectManager(
                 Log.e("WFDManager","The WiFi direct adapter state has changed to $isWifiP2pEnabled")
             }
 
-            WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> {
+           /* WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> {
                 manager.requestPeers(channel) { peers: WifiP2pDeviceList? ->
                     peers?.deviceList?.let { iFaceImpl.onPeerListUpdated(it) }
                     Log.e("WFDManager","The peer listing has changed")
                 }
-            }
+            } */
             WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                 val wifiP2pInfo = when{
                     Build.VERSION.SDK_INT >= 33 -> intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO, WifiP2pInfo::class.java)!!
