@@ -3,8 +3,7 @@ package dev.kwasi.echoservercomplete.network
 import android.util.Log
 import com.google.gson.Gson
 import dev.kwasi.echoservercomplete.models.ContentModel
-import java.io.BufferedReader
-import java.io.BufferedWriter
+import dev.kwasi.echoservercomplete.student.StudentAdapterInterface
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -14,24 +13,13 @@ import kotlin.concurrent.thread
 /// The [Server] class has all the functionality that is responsible for the 'server' connection.
 /// This is implemented using TCP. This Server class is intended to be run on the GO.
 
-class Server(private val iFaceImpl:NetworkMessageInterface) {
+class Server(private val connectionListener:StudentAdapterInterface) {
     companion object {
         const val PORT: Int = 9999
-        private val clientMap: HashMap<String, Socket> = HashMap()
-
-
-        fun getClientMap() : HashMap<String, Socket> {
-            return clientMap
-        }
-
-        fun updateClientMap(student: String, socket: Socket) {
-            clientMap[student] = socket
-
-
-        }
-
     }
 
+    private val studentMap: HashMap<String, Socket> = HashMap()
+    val studentMessages: HashMap<String, MutableList<ContentModel>> = HashMap()
 
 
     private val svrSocket: ServerSocket =
@@ -42,88 +30,101 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
         thread{
             while(true){
                 try{
-                    val clientConnectionSocket = svrSocket.accept()
+                    val studentSocket = svrSocket.accept()
                     Log.e("SERVER", "The server has accepted a connection: ")
-                    handleSocket(clientConnectionSocket)
+                    handleSocket(studentSocket)
 
                 }catch (e: Exception){
                     Log.e("SERVER", "An error has occurred in the server!")
                     e.printStackTrace()
                 }
             }
-        }
+        }.start()
     }
 
 
-    private fun handleSocket(socket: Socket){
-        socket.inetAddress.hostAddress?.let {
-            clientMap[it] = socket
+    private fun handleSocket(studentSocket: Socket) {
+            studentSocket.inetAddress.hostAddress?.let { clientAddress ->
+                Log.e("SERVER", "A new student has connected from IP: $clientAddress")
+                thread {
+                    try {
+                        val studentReader = studentSocket.getInputStream().bufferedReader()
 
-            Log.e("SERVER", "A new connection has been detected!")
-            thread {
-                val clientReader = socket.inputStream.bufferedReader()
-                val clientWriter = socket.outputStream.bufferedWriter()
-                var receivedJson: String?
+                        val receivedJson: String? = studentReader.readLine()
+                        val studentId =
+                            Gson().fromJson(receivedJson, ContentModel::class.java)
+                        studentMap[studentId.message] = studentSocket
 
-               // handshake(socket, clientReader, clientWriter)
-                while(socket.isConnected){
-                    try{
-                        receivedJson = clientReader.readLine()
-                        if (receivedJson!= null){
-                            Log.e("SERVER", "Received a message from client $it")
-                            val clientContent = Gson().fromJson(receivedJson, ContentModel::class.java)
-                            val reversedContent = ContentModel(clientContent.message.reversed(), "192.168.49.1")
+                        studentMessages[studentId.message] = mutableListOf()
 
-                            val reversedContentStr = Gson().toJson(reversedContent)
-                            clientWriter.write("$reversedContentStr\n")
-                            clientWriter.flush()
+                        connectionListener.onStudentConnected(studentId.message)
+                        connectionListener.onStudentsUpdated(studentMap.keys.toList())
 
-                            // To show the correct alignment of the items (on the server), I'd swap the IP that it came from the client
-                            // This is some OP hax that gets the job done but is not the best way of getting it done.
-                            val tmpIp = clientContent.senderIp
-                            clientContent.senderIp = reversedContent.senderIp
-                            reversedContent.senderIp = tmpIp
-
-                            iFaceImpl.onContent(clientContent)
-                            iFaceImpl.onContent(reversedContent)
-
+                        handleStudentMessages(studentSocket, studentId.message)
+                    } catch (e: Exception) {
+                            Log.e("SERVER", "An error has occurred with the client $clientAddress")
+                            e.printStackTrace()
                         }
-                    } catch (e: Exception){
-                        Log.e("SERVER", "An error has occurred with the client $it")
-                        e.printStackTrace()
-                    }
-                }
+                    }.start()
+                } ?.run {
+                    Log.e("Server","Failed to retrieve client IP address")
             }
         }
-    }
 
-    fun close(){
+       private fun handleStudentMessages(studentSocket: Socket, studentId: String) {
+           val studentReader = studentSocket.getInputStream().bufferedReader()
+           var receivedJson: String?
+
+           while (studentSocket.isConnected) {
+               try {
+                   receivedJson = studentReader.readLine()
+                   if (receivedJson != null) {
+                       Log.e(
+                           "SERVER",
+                           "Received a message from client ${studentSocket.inetAddress.hostAddress}"
+                       )
+                       val messageContent =
+                           Gson().fromJson(receivedJson, ContentModel::class.java)
+
+                       studentMessages[studentId]?.add(messageContent)
+
+                       connectionListener.onMessage(
+                           studentId,
+                           studentMessages[studentId] ?: listOf()
+                       )
+                   }
+
+               } catch (e: Exception) {
+                   e.printStackTrace()
+                   break
+               }
+
+
+           }
+
+           studentMap.remove(studentId)
+           connectionListener.onStudentsUpdated(studentMap.keys.toList())
+       }
+
+       fun sendMessage(studentId: String, content: ContentModel) {
+           val studentSocket = studentMap[studentId]
+           studentSocket?.let {
+            thread{
+                    try {
+                        val contentAsStr: String = Gson().toJson(content)
+                        val writer = studentSocket.getOutputStream().bufferedWriter()
+                        writer.write(contentAsStr)
+                        writer.flush()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }.start()
+            }
+       }
+
+    fun close() {
         svrSocket.close()
-        clientMap.clear()
+        studentMap.values.forEach() {it.close()}
     }
-
- /*   private fun handshake(socket: Socket, clientReader: BufferedReader, clientWriter: BufferedWriter) : String {
-        clientWriter.write(Gson().toJson("Please submit student Id"))
-        clientWriter.flush()
-        val sidJson = clientReader.readLine()
-        val sid = Gson().fromJson(sidJson, ContentModel::class.java)
-        updateClientMap(sid.message, socket)
-
-        //Todo student id in class check use helper function
-        //Todo encryption exchange use helper function
-        return sid.message
-
-
-    } */
-
-    fun sendMessage(content: ContentModel,clientWriter: BufferedWriter) {
-        thread {
-            val contentAsStr:String = Gson().toJson(content)
-            clientWriter.write("$contentAsStr\n")
-            clientWriter.flush()
-        }
-    }
-
-
 
 }
