@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import dev.kwasi.echoservercomplete.models.ContentModel
 import dev.kwasi.echoservercomplete.student.StudentAdapterInterface
+import java.net.BindException
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -15,31 +16,43 @@ import kotlin.concurrent.thread
 
 class Server(private val connectionListener:StudentAdapterInterface) {
     companion object {
-        const val PORT: Int = 9999
+        const val PORT: Int = 9090
     }
 
-    private var isRunning = true
+    private var isRunning = false
     private val studentMap: HashMap<String, Socket> = HashMap()
     val studentMessages: HashMap<String, MutableList<ContentModel>> = HashMap()
 
+    private var serverThread: Thread? = null
 
-    private val svrSocket: ServerSocket =
-        ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
+    private lateinit var svrSocket: ServerSocket
 
 
     init {
-        isRunning = true
-        thread{
-            while(isRunning){
-                try{
-                    val studentSocket = svrSocket.accept()
-                    Log.e("SERVER", "The server has accepted a connection: ")
-                    handleSocket(studentSocket)
+        startServer()
+    }
 
-                }catch (e: Exception){
-                    Log.e("SERVER", "An error has occurred in the server!")
-                    e.printStackTrace()
+    private fun startServer() {
+        if (::svrSocket.isInitialized && !svrSocket.isClosed) {
+            Log.e("Server", "Server is already running.")
+            return
+        }
+        serverThread = thread {
+            try {
+                svrSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
+                Log.d("Server", "Server started on port $PORT")
+
+                while (isRunning) {
+                    try {
+                        val studentSocket = svrSocket.accept()
+                        Log.d("SERVER", "The server has accepted a connection from ${studentSocket.inetAddress.hostAddress}")
+                        handleSocket(studentSocket)
+                    } catch (e: Exception) {
+                        Log.e("SERVER", "An error has occurred in the server ${e.message}! and is running is $isRunning")
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("Server", "Server Socket Error: ${e.message}")
             }
         }
     }
@@ -67,7 +80,7 @@ class Server(private val connectionListener:StudentAdapterInterface) {
                             Log.e("SERVER", "An error has occurred with the client $clientAddress")
                             e.printStackTrace()
                         }
-                    }.start()
+                    }
                 } ?.run {
                     Log.e("Server","Failed to retrieve client IP address")
             }
@@ -116,18 +129,34 @@ class Server(private val connectionListener:StudentAdapterInterface) {
                         val contentAsStr: String = Gson().toJson(content)
                         val writer = studentSocket.getOutputStream().bufferedWriter()
                         writer.write(contentAsStr)
+                        writer.newLine()
                         writer.flush()
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
-                }.start()
+                }
             }
        }
 
     fun close() {
+
         isRunning = false
-        studentMap.values.forEach {it.close()}
-        svrSocket.close()
+        try {
+            studentMap.values.forEach {
+                try {
+                    it.close()
+                }catch (e: Exception) {
+                    Log.e("Server", "Error closing socket: ${e.message}")
+                }
+            }
+            svrSocket.close()
+            serverThread?.interrupt()
+            Log.d("Server", "Server stopped and socket closed.")
+        } catch (e: Exception) {
+            Log.e("Server", "Error closing server socket: ${e.message}")
+        }
+
+
 
     }
 

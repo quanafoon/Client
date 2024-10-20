@@ -79,6 +79,7 @@ class CommunicationActivity :
 
         startClassBtn.setOnClickListener{ view : View ->
             createGroup(view)
+            Log.d("CommunicationActivity", "Start Class Button Pressed")
         }
 
         endClassbtn = findViewById(R.id.endClassBtn)
@@ -149,6 +150,7 @@ class CommunicationActivity :
 
     private fun closeGroup(view: View) {
         server.close()
+
         wfdManager?.disconnect {
             Log.e("CommunicationActivity", "Class has been ended and group closed")
         }
@@ -206,12 +208,14 @@ class CommunicationActivity :
         toast.show()
         wfdHasConnection = groupInfo != null
 
-        if (groupInfo == null){
+        if (groupInfo == null && ::server.isInitialized){
             server.close()
-        } else if (groupInfo.isGroupOwner){
-            server = Server(this)
-            deviceIp = "192.168.49.1"
+        } else if (groupInfo != null) {
+            if (groupInfo.isGroupOwner){
+                server = Server(this)
+                deviceIp = "192.168.49.1"
 
+            }
         }
         updateUI()
     }
@@ -249,7 +253,10 @@ class CommunicationActivity :
 
     override fun onDestroy() {
         super.onDestroy()
+        wfdManager?.disconnect { Log.d("CommunicationActivity","Disconnecting on Close") }
+        unregisterReceiver(wfdManager)
         server.close()
+
 
     }
 
