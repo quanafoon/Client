@@ -6,12 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.wifi.p2p.WifiP2pConfig
 import android.net.wifi.p2p.WifiP2pDevice
-import android.net.wifi.p2p.WifiP2pDeviceList
+
 import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pInfo
 import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.WifiP2pManager.ActionListener
-import android.net.wifi.p2p.WifiP2pManager.P2pStateListener
+
 import android.os.Build
 import android.util.Log
 
@@ -25,8 +25,17 @@ class WifiDirectManager(
 ):BroadcastReceiver() {
     var groupInfo: WifiP2pGroup? = null
 
+
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
+
+        val extras = intent.extras
+        if (extras != null) {
+            Log.d("WifiDirectReceiver", "Extras: $extras")
+        } else {
+            Log.e("WifiDirectReceiver", "No extras found in intent")
+        }
+
         when (intent.action) {
             WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION -> {
                 val state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
@@ -35,12 +44,8 @@ class WifiDirectManager(
                 Log.e("WFDManager","The WiFi direct adapter state has changed to $isWifiP2pEnabled")
             }
 
-           /* WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> {
-                manager.requestPeers(channel) { peers: WifiP2pDeviceList? ->
-                    peers?.deviceList?.let { iFaceImpl.onPeerListUpdated(it) }
-                    Log.e("WFDManager","The peer listing has changed")
-                }
-            } */
+
+
             WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                 val wifiP2pInfo = when{
                     Build.VERSION.SDK_INT >= 33 -> intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO, WifiP2pInfo::class.java)!!
@@ -73,16 +78,18 @@ class WifiDirectManager(
 
     @SuppressLint("MissingPermission")
     fun createGroup(){
-        manager.createGroup(channel, object : ActionListener {
-            override fun onSuccess() {
-                Log.e("WFDManager","Successfully created a group with myself as the GO")
-            }
+        disconnect {
+            manager.createGroup(channel, object : ActionListener {
+                override fun onSuccess() {
+                    Log.e("WFDManager", "Successfully created a group with myself as the GO")
+                }
 
-            override fun onFailure(reason: Int) {
-                Log.e("WFDManager","An error occurred while trying to create a group")
-            }
+                override fun onFailure(reason: Int) {
+                    Log.e("WFDManager", "An error occurred while trying to create a group $reason")
+                }
 
-        })
+            })
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -114,13 +121,17 @@ class WifiDirectManager(
         })
     }
 
-    fun disconnect(){
+    fun disconnect(callback: () -> Unit){
         manager.removeGroup(channel, object : ActionListener {
             override fun onSuccess() {
                 Log.e("WFDManager","Successfully disconnected from the group")
+                groupInfo = null
+                iFaceImpl.onGroupStatusChanged(groupInfo)
+                callback()
             }
             override fun onFailure(reason: Int) {
                 Log.e("WFDManager","An error occurred while trying to disconnect from the group")
+                callback()
             }
 
         })

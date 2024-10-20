@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -40,6 +41,7 @@ class CommunicationActivity :
     }
 
 
+
     private lateinit var chatAdapter: ChatAdapter
     private lateinit var studentAdapter: StudentAdapter
     private lateinit var selectedStudent: String
@@ -48,8 +50,11 @@ class CommunicationActivity :
     private lateinit var server: Server
     private lateinit var messageInput: EditText
     private lateinit var sendButton: Button
-    private lateinit var createGroupButton: Button
-
+    private lateinit var startClassBtn : Button
+    private lateinit var endClassbtn : Button
+    private lateinit var classInfoText: TextView
+    private lateinit var classPasswordtext: TextView
+    private lateinit var activeStudentTextView: TextView
     private var deviceIp: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +66,7 @@ class CommunicationActivity :
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        registerReceiver(wfdManager, intentFilter)
 
 
 
@@ -68,6 +74,22 @@ class CommunicationActivity :
         val channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
 
+
+        startClassBtn = findViewById(R.id.startClassBtn)
+
+        startClassBtn.setOnClickListener{ view : View ->
+            createGroup(view)
+        }
+
+        endClassbtn = findViewById(R.id.endClassBtn)
+
+        endClassbtn.setOnClickListener{view : View ->
+            closeGroup(view)
+        }
+
+        classInfoText = findViewById(R.id.ClassInformation)
+        classPasswordtext = findViewById(R.id.classPassword)
+        activeStudentTextView = findViewById(R.id.activeStudent)
 
 
         studentAdapter = StudentAdapter(emptyList(), object : ConnectionListener {
@@ -88,7 +110,7 @@ class CommunicationActivity :
         rvChatList.adapter = chatAdapter
         rvChatList.layoutManager = LinearLayoutManager(this)
 
-        server = Server(this)
+
 
        sendButton.setOnClickListener {
            val message = messageInput.text.toString()
@@ -99,6 +121,8 @@ class CommunicationActivity :
            } else {
                Toast.makeText(this, "Select a student and enter a message.", Toast.LENGTH_SHORT).show()
            }
+
+
        }
 
 
@@ -119,8 +143,16 @@ class CommunicationActivity :
             unregisterReceiver(it)
         }
     }
-    fun createGroup(view: View) {
+    private fun createGroup(view: View) {
         wfdManager?.createGroup()
+    }
+
+    private fun closeGroup(view: View) {
+        server.close()
+        wfdManager?.disconnect {
+            Log.e("CommunicationActivity", "Class has been ended and group closed")
+        }
+        updateUI()
     }
 
 
@@ -142,8 +174,9 @@ class CommunicationActivity :
 
         val wfdConnectedView = findViewById<View>(R.id.clHasConnection)
         wfdConnectedView.visibility = if(wfdHasConnection)View.VISIBLE else View.GONE
-        wfdConnectedView.visibility=View.VISIBLE
 
+        classInfoText.text= "Class Network : ${wfdManager?.groupInfo?.networkName}"
+        classPasswordtext.text="Password : ${wfdManager?.groupInfo?.passphrase}"
     }
 
 
@@ -163,7 +196,6 @@ class CommunicationActivity :
     }
 
 
-
     override fun onGroupStatusChanged(groupInfo: WifiP2pGroup?) {
         val text = if (groupInfo == null){
             "Group is not formed"
@@ -179,8 +211,8 @@ class CommunicationActivity :
         } else if (groupInfo.isGroupOwner){
             server = Server(this)
             deviceIp = "192.168.49.1"
-        }
 
+        }
         updateUI()
     }
 
@@ -205,8 +237,10 @@ class CommunicationActivity :
         }
     }
 
+
     private fun handleStudentSelection(studentId: String) {
         selectedStudent = studentId
+        activeStudentTextView.text = "Student Chat - $selectedStudent"
         val messageList = server.studentMessages[studentId]
         if (messageList !=null) {
             runOnUiThread { chatAdapter.updateMessages(messageList) }
@@ -216,6 +250,7 @@ class CommunicationActivity :
     override fun onDestroy() {
         super.onDestroy()
         server.close()
+
     }
 
 

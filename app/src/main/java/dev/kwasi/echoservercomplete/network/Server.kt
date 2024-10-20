@@ -18,6 +18,7 @@ class Server(private val connectionListener:StudentAdapterInterface) {
         const val PORT: Int = 9999
     }
 
+    private var isRunning = true
     private val studentMap: HashMap<String, Socket> = HashMap()
     val studentMessages: HashMap<String, MutableList<ContentModel>> = HashMap()
 
@@ -27,8 +28,9 @@ class Server(private val connectionListener:StudentAdapterInterface) {
 
 
     init {
+        isRunning = true
         thread{
-            while(true){
+            while(isRunning){
                 try{
                     val studentSocket = svrSocket.accept()
                     Log.e("SERVER", "The server has accepted a connection: ")
@@ -39,7 +41,7 @@ class Server(private val connectionListener:StudentAdapterInterface) {
                     e.printStackTrace()
                 }
             }
-        }.start()
+        }
     }
 
 
@@ -123,8 +125,10 @@ class Server(private val connectionListener:StudentAdapterInterface) {
        }
 
     fun close() {
+        isRunning = false
+        studentMap.values.forEach {it.close()}
         svrSocket.close()
-        studentMap.values.forEach() {it.close()}
+
     }
 
 }

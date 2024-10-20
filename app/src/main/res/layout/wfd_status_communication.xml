@@ -55,15 +55,30 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <TextView
-            android:id="@+id/tvWfdDisconnected"
+            android:id="@+id/Title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="WiFi Direct - Disconnected"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:text="Attendance and Feedback System"
+            android:textSize="34sp"
+            app:layout_constraintBottom_toTopOf="@+id/startClassBtn"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.34" />
+
+        <Button
+            android:id="@+id/startClassBtn"
+            android:layout_width="198dp"
+            android:layout_height="93dp"
+            android:text="START CLASS"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.461" />
+
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

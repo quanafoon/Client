@@ -6,13 +6,14 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:id="@+id/clHasConnection"
-    tools:context=".CommunicationActivity">
+    tools:context=".CommunicationActivity"
+    android:visibility="gone">
 
         <TextView
             android:id="@+id/ClassInformation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="0.25"
             android:text="Class Network: "
             android:textSize="20sp"
             android:textStyle="bold"
@@ -22,9 +23,9 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="0.25"
             android:gravity="center_vertical"
-            android:text="Network Password: "
+            android:id="@+id/classPassword"
             android:textStyle="bold"
             android:textSize="20sp"
             />
@@ -34,15 +35,23 @@
         android:layout_height="wrap_content"
         android:text="End Class"
         android:textSize="20sp"
-        android:onClick="closeSocket"
+        android:id="@+id/endClassBtn"
     />
 
-        <androidx.recyclerview.widget.RecyclerView
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/studentListTitle"
+        android:text="Attendees"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="left"/>
+       <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/StudentList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
-            android:layout_weight="1"/>
+            android:layout_weight="0.5"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -50,11 +59,13 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/activeStudent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Student Chat - "
+                android:text="Student Chat - No student selected "
                 android:textSize="20sp"
                 android:textAlignment="center"
+                app:layout_constraintBottom_toTopOf="@id/rvChat"
                 />
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvChat"
