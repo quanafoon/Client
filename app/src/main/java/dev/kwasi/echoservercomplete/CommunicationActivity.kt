@@ -66,6 +66,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val manager: WifiP2pManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         val channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
+        wfdManager!!.disconnect()
 
         classInfoText = findViewById(R.id.ClassInformation)
         classPasswordtext = findViewById(R.id.classPassword)
@@ -181,10 +182,11 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val toast = Toast.makeText(this, text, Toast.LENGTH_SHORT)
         toast.show()
         wfdHasConnection = groupInfo != null
-
         if (groupInfo == null) {
             server?.close()
+            Log.d("SERVER", "server status running :${server!=null}")
         } else if (groupInfo.isGroupOwner && (server == null || server!!.isClosed)) {
+            Log.d("SERVER", "groupInfo $groupInfo, server status running :${server!=null}")
             server = Server(this)
             deviceIp = "192.168.49.1"
         }
