@@ -158,7 +158,9 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             client?.close()
 
         } else if (!groupInfo.isGroupOwner && client == null) {
-            client = Client(this)
+            val idEditText: EditText = findViewById(R.id.etStudentID)
+            val id = idEditText.text.toString()
+            client = Client(this, id)
             deviceIp = client!!.ip
         }
         val etNetworkName : EditText  = findViewById(R.id.etNetworkName)

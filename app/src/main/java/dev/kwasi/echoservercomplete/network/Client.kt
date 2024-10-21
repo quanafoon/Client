@@ -8,7 +8,7 @@ import java.io.BufferedWriter
 import java.net.Socket
 import kotlin.concurrent.thread
 
-class Client (private val networkMessageInterface: NetworkMessageInterface){
+class Client(private val networkMessageInterface: NetworkMessageInterface, var studentId: String){
     private lateinit var clientSocket: Socket
     private lateinit var reader: BufferedReader
     private lateinit var writer: BufferedWriter
@@ -21,6 +21,10 @@ class Client (private val networkMessageInterface: NetworkMessageInterface){
             reader = clientSocket.inputStream.bufferedReader()
             writer = clientSocket.outputStream.bufferedWriter()
             ip = clientSocket.inetAddress.hostAddress!!
+            val handshakeContent = ContentModel(studentId, ip)
+            val handshakeAsStr = Gson().toJson(handshakeContent)
+            writer.write(handshakeAsStr)
+
             while(true){
                 try{
                     val serverResponse = reader.readLine()
