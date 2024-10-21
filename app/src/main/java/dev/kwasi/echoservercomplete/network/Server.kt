@@ -62,21 +62,49 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
 
     private fun handleSocket(socket: Socket){
         socket.inetAddress.hostAddress?.let {
-            clientMap["Bob"] = socket
-            iFaceImpl.onStudentsUpdated(clientMap.keys.toList())
-            iFaceImpl.onStudentConnected(socket.inetAddress?.hostAddress.toString())
-            Log.e("SERVER", "A new connection has been detected!")
-            handleThread = thread {
 
-                while(!socket.isClosed){
-                    try{
-                        listenForMessages(socket)
-                    } catch (e: Exception){
-                        Log.e("SERVER", "An error has occurred with the client $it")
-                        e.printStackTrace()
+            val clientId = handshake(socket)
+            if(clientId != null) {
+                clientMap[clientId] = socket
+                iFaceImpl.onStudentsUpdated(clientMap.keys.toList())
+                iFaceImpl.onStudentConnected(socket.inetAddress?.hostAddress.toString())
+                Log.e("SERVER", "A new connection has been detected!")
+                handleThread = thread {
+
+                    while(!socket.isClosed){
+                        try{
+                            listenForMessages(socket)
+                        } catch (e: Exception){
+                            Log.e("SERVER", "An error has occurred with the client $it")
+                            e.printStackTrace()
+                        }
                     }
                 }
+            }else {
+                Log.e("Server", "Handshake failed with client ${socket.inetAddress.hostAddress}")
+                socket.close()
             }
+        }
+
+    }
+
+    private fun handshake(socket: Socket) : String? {
+        return try{
+            val reader = socket.getInputStream().bufferedReader()
+            val clientId = reader.readLine()
+            if (clientId != null && clientId.isNotEmpty()){
+                Log.d("Server","Client with Id $clientId connected")
+
+                val writer = socket.getOutputStream().bufferedWriter()
+                writer.write("ACK\n")
+                writer.flush()
+                clientId
+            }else{
+                null
+            }
+        }catch (e: Exception){
+            Log.e("Server", "Handshake error ${e.message}")
+            null
         }
     }
 
