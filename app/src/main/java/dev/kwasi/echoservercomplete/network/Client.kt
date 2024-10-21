@@ -23,8 +23,8 @@ class Client(private val networkMessageInterface: NetworkMessageInterface, var s
             ip = clientSocket.inetAddress.hostAddress!!
             val handshakeContent = ContentModel(studentId, ip)
             val handshakeAsStr = Gson().toJson(handshakeContent)
-            writer.write("handshakeAsStr\n")
-
+            writer.write("$handshakeAsStr\n")
+            writer.flush()
             while(true){
                 try{
                     val serverResponse = reader.readLine()
