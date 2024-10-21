@@ -24,11 +24,9 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
     private var handleThread: Thread? = null
     @Volatile
     private var isRunning = true
+    var isClosed = true
 
     init {
-        isRunning=true
-        clientMap.clear()
-        iFaceImpl.onStudentsUpdated(emptyList())
        // studentMessages.clear()
         startServer()
     }
@@ -37,6 +35,10 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
             Log.e("Server", "Server is already running.")
             return
         }
+        isClosed = false
+        isRunning=true
+        clientMap.clear()
+        iFaceImpl.onStudentsUpdated(emptyList())
         serverThread = thread {
             try {
                 svrSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
@@ -117,6 +119,7 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
             }
             svrSocket.close()
             clientMap.clear()
+            isClosed = true
         }
     }
 

@@ -184,7 +184,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
 
         if (groupInfo == null) {
             server?.close()
-        } else if (groupInfo.isGroupOwner && server == null) {
+        } else if (groupInfo.isGroupOwner && (server == null || server!!.isClosed)) {
             server = Server(this)
             deviceIp = "192.168.49.1"
         }
