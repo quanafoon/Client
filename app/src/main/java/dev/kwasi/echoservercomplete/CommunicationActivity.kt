@@ -18,7 +18,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dev.kwasi.echoservercomplete.chatlist.ChatListAdapter
 import dev.kwasi.echoservercomplete.models.ContentModel
-import dev.kwasi.echoservercomplete.network.Client
 import dev.kwasi.echoservercomplete.network.NetworkMessageInterface
 import dev.kwasi.echoservercomplete.network.Server
 import dev.kwasi.echoservercomplete.peerlist.PeerListAdapter
@@ -43,7 +42,6 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     private var wfdHasConnection = false
     private var hasDevices = false
     private var server: Server? = null
-    private var client: Client? = null
     private var deviceIp: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,8 +117,11 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val etString = etMessage.text.toString()
         val content = ContentModel(etString, deviceIp)
         etMessage.text.clear()
-        client?.sendMessage(content)
-        chatListAdapter?.addItemToEnd(content)
+
+        if (server != null) {
+            server?.sendMessage(content)
+            chatListAdapter?.addItemToEnd(content)
+        }
 
     }
 
@@ -147,24 +148,20 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     }
 
     override fun onGroupStatusChanged(groupInfo: WifiP2pGroup?) {
-        val text = if (groupInfo == null){
+        val text = if (groupInfo == null) {
             "Group is not formed"
         } else {
             "Group has been formed"
         }
-        val toast = Toast.makeText(this, text , Toast.LENGTH_SHORT)
+        val toast = Toast.makeText(this, text, Toast.LENGTH_SHORT)
         toast.show()
         wfdHasConnection = groupInfo != null
 
-        if (groupInfo == null){
+        if (groupInfo == null) {
             server?.close()
-            client?.close()
-        } else if (groupInfo.isGroupOwner && server == null){
+        } else if (groupInfo.isGroupOwner && server == null) {
             server = Server(this)
             deviceIp = "192.168.49.1"
-        } else if (!groupInfo.isGroupOwner && client == null) {
-            client = Client(this)
-            deviceIp = client!!.ip
         }
     }
 

@@ -20,10 +20,11 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
 
     private val svrSocket: ServerSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
     private val clientMap: HashMap<String, Socket> = HashMap()
-
+    private var isRunning = false
     init {
+        isRunning = true
         thread{
-            while(true){
+            while(isRunning){
                 try{
                     val clientConnectionSocket = svrSocket.accept()
                     Log.e("SERVER", "The server has accepted a connection: ")
@@ -40,35 +41,13 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
 
     private fun handleSocket(socket: Socket){
         socket.inetAddress.hostAddress?.let {
-            clientMap[it] = socket
+            clientMap["Bob"] = socket
             Log.e("SERVER", "A new connection has been detected!")
             thread {
-                val clientReader = socket.inputStream.bufferedReader()
-                val clientWriter = socket.outputStream.bufferedWriter()
-                var receivedJson: String?
 
                 while(socket.isConnected){
                     try{
-                        receivedJson = clientReader.readLine()
-                        if (receivedJson!= null){
-                            Log.e("SERVER", "Received a message from client $it")
-                            val clientContent = Gson().fromJson(receivedJson, ContentModel::class.java)
-                            val reversedContent = ContentModel(clientContent.message.reversed(), "192.168.49.1")
-
-                            val reversedContentStr = Gson().toJson(reversedContent)
-                            clientWriter.write("$reversedContentStr\n")
-                            clientWriter.flush()
-
-                            // To show the correct alignment of the items (on the server), I'd swap the IP that it came from the client
-                            // This is some OP hax that gets the job done but is not the best way of getting it done.
-                            val tmpIp = clientContent.senderIp
-                            clientContent.senderIp = reversedContent.senderIp
-                            reversedContent.senderIp = tmpIp
-
-                            iFaceImpl.onContent(clientContent)
-                            iFaceImpl.onContent(reversedContent)
-
-                        }
+                        listenForMessages(socket)
                     } catch (e: Exception){
                         Log.e("SERVER", "An error has occurred with the client $it")
                         e.printStackTrace()
@@ -78,7 +57,35 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
         }
     }
 
+    fun sendMessage(content: ContentModel){
+        thread{
+            val writer = clientMap["Bob"]?.getOutputStream()?.bufferedWriter()
+            val contentAsStr:String = Gson().toJson(content)
+            writer?.write("$contentAsStr\n")
+            writer?.flush()
+        }
+    }
+
+    private fun listenForMessages(clientSocket: Socket) {
+        val reader = clientSocket.inputStream.bufferedReader()
+            try {
+                while (clientSocket.isConnected) {
+                    val receivedMessage = reader.readLine()
+                    if (receivedMessage != null) {
+                        Log.e("Client", "Received: $receivedMessage")
+                        val message =Gson().fromJson(receivedMessage, ContentModel::class.java)
+                        iFaceImpl.onContent(message)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Client", "Error receiving message: ${e.message}")
+            }
+    }
+
+
+
     fun close(){
+        isRunning = false
         svrSocket.close()
         clientMap.clear()
     }
