@@ -13,6 +13,8 @@ import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.WifiP2pManager.ActionListener
 
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 
 /// This [WifiDirectManager] class is a [BroadcastReceiver] that listens for events fired from the
@@ -58,13 +60,6 @@ class WifiDirectManager(
                         else -> @Suppress("DEPRECATION") intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO)!!
                     }
 
-                    if (!wifiP2pInfo.groupFormed) {
-                        Log.e("WFDManager", "No group formed or wifiP2pInfo is null wifiInfo = $wifiP2pInfo, groupInfo : ${wifiP2pInfo.groupFormed}")
-                        // Clean up or return early
-                        iFaceImpl.onGroupStatusChanged(null)
-                        return  // Return from the enclosing function
-                    }
-
 
                     val tmpGroupInfo = when {
                         !(wifiP2pInfo.groupFormed) -> null
@@ -76,10 +71,7 @@ class WifiDirectManager(
                         else -> @Suppress("DEPRECATION") intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_GROUP)!!
                     }
 
-                    if (tmpGroupInfo == null) {
-                        Log.e("WFDManager", "tmpGroupInfo is null, returning early")
-                        return
-                    }
+
                     if (groupInfo != tmpGroupInfo) {
                         groupInfo = tmpGroupInfo
                         Log.e("WFDManager", "The group status has changed")
@@ -110,36 +102,30 @@ class WifiDirectManager(
         disconnect {
             manager.createGroup(channel, object : ActionListener {
                 override fun onSuccess() {
-                    Log.d("WFDManager", "Successfully created a group with myself as the GO")
-                    // Request the group info immediately after successful group creation
-                    manager.requestGroupInfo(channel) { group ->
-                        if (group != null) {
-                            groupInfo = group
-                            Log.d("WFDManager", "Group info retrieved successfully: $groupInfo")
+                    Log.e("WFDManager", "Successfully created a group with myself as the GO")
 
-                            iFaceImpl.onGroupStatusChanged(groupInfo)
-
-                        } else {
-                            Log.e("WFDManager", "Group info is null after creation")
-                            iFaceImpl.onGroupStatusChanged(null)
+                    // Delay to allow group formation
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        manager.requestGroupInfo(channel) { group ->
+                            if (group != null) {
+                                groupInfo = group
+                                Log.e("WFDManager", "Group successfully formed: $group")
+                                iFaceImpl.onGroupStatusChanged(groupInfo)
+                            } else {
+                                Log.e("WFDManager", "Group info is null after group creation")
+                            }
                         }
-                    }
+                    }, 3000) // Wait for 3 seconds
                 }
 
                 override fun onFailure(reason: Int) {
-                    val errorMessage = when (reason) {
-                        WifiP2pManager.BUSY -> "Wi-Fi P2P is busy"
-                        WifiP2pManager.ERROR -> "An internal error occurred"
-                        WifiP2pManager.P2P_UNSUPPORTED -> "Wi-Fi P2P is not supported"
-                        else -> "Unknown error"
-                    }
-                    Log.e("WFDManager", "An error occurred while trying to create a group: $errorMessage")
+                    Log.e("WFDManager", "Failed to create a group: $reason")
                     iFaceImpl.onGroupStatusChanged(null)
                 }
-
             })
         }
     }
+
 
 
 

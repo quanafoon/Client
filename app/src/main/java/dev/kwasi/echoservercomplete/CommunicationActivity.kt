@@ -47,7 +47,7 @@ class CommunicationActivity :
     private lateinit var selectedStudent: String
     private var wfdAdapterEnabled = false
     private var wfdHasConnection = false
-    private lateinit var server: Server
+    private var server: Server? = null
     private lateinit var messageInput: EditText
     private lateinit var sendButton: Button
     private lateinit var startClassBtn : Button
@@ -117,7 +117,7 @@ class CommunicationActivity :
            val message = messageInput.text.toString()
            val content = ContentModel(message, deviceIp)
            if(selectedStudent.isNotEmpty() && message.isNotEmpty()) {
-               server.sendMessage(selectedStudent, content)
+               server?.sendMessage(selectedStudent, content)
                messageInput.text.clear()
            } else {
                Toast.makeText(this, "Select a student and enter a message.", Toast.LENGTH_SHORT).show()
@@ -149,7 +149,7 @@ class CommunicationActivity :
     }
 
     private fun closeGroup(view: View) {
-        server.close()
+        server?.close()
 
         wfdManager?.disconnect {
             Log.e("CommunicationActivity", "Class has been ended and group closed")
@@ -208,15 +208,13 @@ class CommunicationActivity :
         toast.show()
         wfdHasConnection = groupInfo != null
 
-        if (groupInfo == null && ::server.isInitialized){
-            server.close()
-        } else if (groupInfo != null) {
-            if (groupInfo.isGroupOwner){
+        if (groupInfo == null){
+            server?.close()
+        }else if (groupInfo.isGroupOwner && server == null){
                 server = Server(this)
                 deviceIp = "192.168.49.1"
 
             }
-        }
         updateUI()
     }
 
@@ -245,7 +243,7 @@ class CommunicationActivity :
     private fun handleStudentSelection(studentId: String) {
         selectedStudent = studentId
         activeStudentTextView.text = "Student Chat - $selectedStudent"
-        val messageList = server.studentMessages[studentId]
+        val messageList = server?.studentMessages?.get(studentId)
         if (messageList !=null) {
             runOnUiThread { chatAdapter.updateMessages(messageList) }
         }
@@ -255,7 +253,7 @@ class CommunicationActivity :
         super.onDestroy()
         wfdManager?.disconnect { Log.d("CommunicationActivity","Disconnecting on Close") }
         unregisterReceiver(wfdManager)
-        server.close()
+        server?.close()
 
 
     }

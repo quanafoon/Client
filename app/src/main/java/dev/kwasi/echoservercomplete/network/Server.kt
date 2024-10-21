@@ -16,7 +16,7 @@ import kotlin.concurrent.thread
 
 class Server(private val connectionListener:StudentAdapterInterface) {
     companion object {
-        const val PORT: Int = 9090
+        const val PORT: Int = 9999
     }
 
     private var isRunning = false
@@ -29,6 +29,8 @@ class Server(private val connectionListener:StudentAdapterInterface) {
 
 
     init {
+        studentMap.clear()
+        studentMessages.clear()
         startServer()
     }
 
