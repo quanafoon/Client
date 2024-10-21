@@ -18,22 +18,41 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
 
     }
 
-    private val svrSocket: ServerSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
+    private lateinit var svrSocket: ServerSocket
     private val clientMap: HashMap<String, Socket> = HashMap()
-    private var isRunning = false
-    init {
-        isRunning = true
-        thread{
-            while(isRunning){
-                try{
-                    val clientConnectionSocket = svrSocket.accept()
-                    Log.e("SERVER", "The server has accepted a connection: ")
-                    handleSocket(clientConnectionSocket)
+    private var serverThread : Thread? = null
+    private var handleThread: Thread? = null
+    @Volatile
+    private var isRunning = true
 
-                }catch (e: Exception){
-                    Log.e("SERVER", "An error has occurred in the server!")
-                    e.printStackTrace()
+    init {
+        isRunning=true
+        clientMap.clear()
+        iFaceImpl.onStudentsUpdated(emptyList())
+       // studentMessages.clear()
+        startServer()
+    }
+    private fun startServer() {
+        if (::svrSocket.isInitialized && !svrSocket.isClosed) {
+            Log.e("Server", "Server is already running.")
+            return
+        }
+        serverThread = thread {
+            try {
+                svrSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
+                Log.d("Server", "Server started on port $PORT")
+
+                while (isRunning) {
+                    try {
+                        val studentSocket = svrSocket.accept()
+                        Log.d("SERVER", "The server has accepted a connection from ${studentSocket.inetAddress.hostAddress}")
+                        handleSocket(studentSocket)
+                    } catch (e: Exception) {
+                        Log.e("SERVER", "An error has occurred in the server ${e.message}! and is running is $isRunning")
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("Server", "Server Socket Error: ${e.message}")
             }
         }
     }
@@ -42,10 +61,12 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
     private fun handleSocket(socket: Socket){
         socket.inetAddress.hostAddress?.let {
             clientMap["Bob"] = socket
+            iFaceImpl.onStudentsUpdated(clientMap.keys.toList())
+            iFaceImpl.onStudentConnected(socket.inetAddress?.hostAddress.toString())
             Log.e("SERVER", "A new connection has been detected!")
-            thread {
+            handleThread = thread {
 
-                while(socket.isConnected){
+                while(!socket.isClosed){
                     try{
                         listenForMessages(socket)
                     } catch (e: Exception){
@@ -67,9 +88,9 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
     }
 
     private fun listenForMessages(clientSocket: Socket) {
-        val reader = clientSocket.inputStream.bufferedReader()
+        val reader = clientSocket.getInputStream().bufferedReader()
             try {
-                while (clientSocket.isConnected) {
+                while (!clientSocket.isClosed) {
                     val receivedMessage = reader.readLine()
                     if (receivedMessage != null) {
                         Log.e("Client", "Received: $receivedMessage")
@@ -84,10 +105,19 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
 
 
 
-    fun close(){
+    fun close() {
         isRunning = false
-        svrSocket.close()
-        clientMap.clear()
+        handleThread?.interrupt()
+        serverThread?.interrupt()
+        clientMap.values.forEach {
+            try {
+                it.close()
+            } catch (e: Exception) {
+                Log.d("Server", "Error Closing Socket ${e.message}")
+            }
+            svrSocket.close()
+            clientMap.clear()
+        }
     }
 
 }
