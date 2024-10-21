@@ -9,6 +9,7 @@ import java.net.InetAddress
 import java.net.Socket
 import kotlin.concurrent.thread
 
+@Suppress("SameParameterValue")
 class Client (private val networkMessageInterface: NetworkMessageInterface, clientId: String){
     private lateinit var clientSocket: Socket
     private lateinit var reader: BufferedReader
@@ -17,11 +18,21 @@ class Client (private val networkMessageInterface: NetworkMessageInterface, clie
     var ip:String = ""
 
     init {
+        if (::clientSocket.isInitialized){
+            clientSocket.close()
+        }
         connectToServer("192.168.49.1", clientId)
+
     }
      private fun connectToServer(address: String, clientId:String) {
+         Log.d("CLIENT","Running connect to server")
          try {
-            clientSocket = Socket(address, PORT)
+             Log.d("Client", "Attempting to connect to server")
+             try {
+                 clientSocket = Socket(address, PORT)
+             }catch (e: Exception){
+                 Log.e("CLIENT", "Error connecting ${e.message}")
+             }
             reader = clientSocket.inputStream.bufferedReader()
             writer = clientSocket.outputStream.bufferedWriter()
             ip = clientSocket.inetAddress.hostAddress!!

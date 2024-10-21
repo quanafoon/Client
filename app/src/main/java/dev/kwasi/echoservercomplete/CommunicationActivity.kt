@@ -6,6 +6,7 @@ import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
@@ -57,7 +58,6 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val manager: WifiP2pManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         val channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
-
         peerListAdapter = PeerListAdapter(this)
         val rvPeerList: RecyclerView= findViewById(R.id.rvPeerList)
         rvPeerList.adapter = peerListAdapter
@@ -87,6 +87,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     }
 
     fun discoverNearbyPeers(view: View) {
+        if(wfdManager?.groupInfo != null)
+            wfdManager?.disconnect()
         wfdManager?.discoverPeers()
     }
 
@@ -156,7 +158,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
 
         if (groupInfo == null){
             client?.close()
-
+        Log.d("CLIENT","client running ${client!=null}")
         } else if (!groupInfo.isGroupOwner && client == null) {
             val etClientId: EditText = findViewById(R.id.etStudentID)
             val clientId = etClientId.text.toString()
