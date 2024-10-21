@@ -59,7 +59,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         wfdManager = WifiDirectManager(manager, channel, this)
 
         peerListAdapter = PeerListAdapter(this)
-        val rvPeerList: RecyclerView= findViewById(R.id.rvPeerListing)
+        val rvPeerList: RecyclerView= findViewById(R.id.rvPeerList)
         rvPeerList.adapter = peerListAdapter
         rvPeerList.layoutManager = LinearLayoutManager(this)
 
@@ -105,7 +105,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val wfdNoConnectionView:ConstraintLayout = findViewById(R.id.clNoWifiDirectConnection)
         wfdNoConnectionView.visibility = if (wfdAdapterEnabled && !wfdHasConnection) View.VISIBLE else View.GONE
 
-        val rvPeerList: RecyclerView= findViewById(R.id.rvPeerListing)
+        val rvPeerList: RecyclerView= findViewById(R.id.rvPeerList)
         rvPeerList.visibility = if (wfdAdapterEnabled && !wfdHasConnection && hasDevices) View.VISIBLE else View.GONE
 
         val wfdConnectedView:ConstraintLayout = findViewById(R.id.clHasConnection)
@@ -161,6 +161,9 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             client = Client(this)
             deviceIp = client!!.ip
         }
+        val etNetworkName : EditText  = findViewById(R.id.etNetworkName)
+        val networkName = groupInfo!!.networkName
+        etNetworkName.setText(networkName)
     }
 
     override fun onDeviceStatusChanged(thisDevice: WifiP2pDevice) {
