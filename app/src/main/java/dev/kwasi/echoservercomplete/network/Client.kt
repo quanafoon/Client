@@ -39,14 +39,13 @@ class Client (private val networkMessageInterface: NetworkMessageInterface, clie
              }
 
         }catch (e: Exception) {
-            Log.e("Client", "Error Connecting to Server")
+            Log.e("Client", "Error Connecting to Server ${e.message}")
         }
     }
 
     private fun listenForMessages(clientSocket: Socket){
         try {
             val reader = clientSocket.getInputStream().bufferedReader()
-            var message: String?
             while (clientSocket.isConnected) {
                 try {
                     val serverResponse = reader.readLine()
