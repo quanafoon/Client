@@ -120,7 +120,7 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
             while (!clientSocket.isClosed) {
                 val receivedMessage = reader.readLine()
                 if (receivedMessage != null) {
-                    Log.e("Client", "Received: $receivedMessage")
+                    Log.e("Server", "Received: $receivedMessage")
                     val message =Gson().fromJson(receivedMessage, ContentModel::class.java)
                     iFaceImpl.onContent(message)
                 }
