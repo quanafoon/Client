@@ -91,14 +91,11 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
     private fun handshake(socket: Socket) : String? {
         return try{
             val reader = socket.getInputStream().bufferedReader()
-            val clientId = reader.readLine()
-            if (clientId != null && clientId.isNotEmpty()){
+            val clientData = reader.readLine()
+            val clientId = Gson().fromJson(clientData, ContentModel::class.java)
+            if (clientData != null && clientId.message.isNotEmpty()){
                 Log.d("Server","Client with Id $clientId connected")
-
-                val writer = socket.getOutputStream().bufferedWriter()
-                writer.write("ACK\n")
-                writer.flush()
-                clientId
+                clientId.message
             }else{
                 null
             }
@@ -108,9 +105,9 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
         }
     }
 
-    fun sendMessage(content: ContentModel){
+    fun sendMessage(content: ContentModel, studentId: String){
         thread{
-            val writer = clientMap["Bob"]?.getOutputStream()?.bufferedWriter()
+            val writer = clientMap[studentId]?.getOutputStream()?.bufferedWriter()
             val contentAsStr:String = Gson().toJson(content)
             writer?.write("$contentAsStr\n")
             writer?.flush()

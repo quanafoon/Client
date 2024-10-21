@@ -23,7 +23,6 @@ import dev.kwasi.echoservercomplete.chatlist.ChatListAdapter
 import dev.kwasi.echoservercomplete.models.ContentModel
 import dev.kwasi.echoservercomplete.network.NetworkMessageInterface
 import dev.kwasi.echoservercomplete.network.Server
-import dev.kwasi.echoservercomplete.peerlist.PeerListAdapter
 import dev.kwasi.echoservercomplete.peerlist.PeerListAdapterInterface
 import dev.kwasi.echoservercomplete.student.StudentAdapter
 import dev.kwasi.echoservercomplete.student.StudentAdapterInterface
@@ -31,7 +30,6 @@ import dev.kwasi.echoservercomplete.wifidirect.WifiDirectInterface
 import dev.kwasi.echoservercomplete.wifidirect.WifiDirectManager
 
 class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerListAdapterInterface, NetworkMessageInterface, StudentAdapterInterface {
-    private lateinit var selectedStudent: String
     private var wfdManager: WifiDirectManager? = null
 
     private val intentFilter = IntentFilter().apply {
@@ -52,6 +50,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     private lateinit var classInfoText: TextView
     private lateinit var classPasswordtext: TextView
     private lateinit var activeStudentTextView: TextView
+    private  lateinit var selectedStudent: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -145,7 +144,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         etMessage.text.clear()
 
         if (server != null) {
-            server?.sendMessage(content)
+            server?.sendMessage(content, selectedStudent)
             chatListAdapter?.addItemToEnd(content)
         }
 
