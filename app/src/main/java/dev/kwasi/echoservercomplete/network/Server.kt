@@ -91,18 +91,18 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
 
     private fun listenForMessages(clientSocket: Socket) {
         val reader = clientSocket.getInputStream().bufferedReader()
-            try {
-                while (!clientSocket.isClosed) {
-                    val receivedMessage = reader.readLine()
-                    if (receivedMessage != null) {
-                        Log.e("Client", "Received: $receivedMessage")
-                        val message =Gson().fromJson(receivedMessage, ContentModel::class.java)
-                        iFaceImpl.onContent(message)
-                    }
+        try {
+            while (!clientSocket.isClosed) {
+                val receivedMessage = reader.readLine()
+                if (receivedMessage != null) {
+                    Log.e("Client", "Received: $receivedMessage")
+                    val message =Gson().fromJson(receivedMessage, ContentModel::class.java)
+                    iFaceImpl.onContent(message)
                 }
-            } catch (e: Exception) {
-                Log.e("Client", "Error receiving message: ${e.message}")
             }
+        } catch (e: Exception) {
+            Log.e("Client", "Error receiving message: ${e.message}")
+        }
     }
 
 
