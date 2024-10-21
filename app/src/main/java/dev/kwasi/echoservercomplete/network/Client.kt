@@ -12,11 +12,12 @@ class Client (private val networkMessageInterface: NetworkMessageInterface){
     private lateinit var clientSocket: Socket
     private lateinit var reader: BufferedReader
     private lateinit var writer: BufferedWriter
+    private val PORT = 9999
     var ip:String = ""
 
     init {
         thread {
-            clientSocket = Socket("192.168.49.1", Server.PORT)
+            clientSocket = Socket("192.168.49.1", PORT)
             reader = clientSocket.inputStream.bufferedReader()
             writer = clientSocket.outputStream.bufferedWriter()
             ip = clientSocket.inetAddress.hostAddress!!
