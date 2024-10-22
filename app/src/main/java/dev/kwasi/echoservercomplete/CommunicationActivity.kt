@@ -28,6 +28,7 @@ import dev.kwasi.echoservercomplete.student.StudentAdapter
 import dev.kwasi.echoservercomplete.student.StudentAdapterInterface
 import dev.kwasi.echoservercomplete.wifidirect.WifiDirectInterface
 import dev.kwasi.echoservercomplete.wifidirect.WifiDirectManager
+import kotlinx.coroutines.selects.select
 
 class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerListAdapterInterface, NetworkMessageInterface, StudentAdapterInterface {
     private var wfdManager: WifiDirectManager? = null
@@ -106,6 +107,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     fun closeGroup(view: View) {
 
         server?.close()
+        server = null
 
         wfdManager?.disconnect()
         updateUI()
@@ -144,8 +146,14 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         etMessage.text.clear()
 
         if (server != null) {
-            server?.sendMessage(content, selectedStudent)
-            chatListAdapter?.addItemToEnd(content)
+            if (::selectedStudent.isInitialized) {
+                server?.sendMessage(content, selectedStudent)
+                chatListAdapter?.addItemToEnd(content)
+            }
+            else {
+                val noSelectionToast : Toast = Toast.makeText(this,"Please select a student to chat with from the Attendees", Toast.LENGTH_SHORT)
+                noSelectionToast.show()
+            }
         }
 
     }

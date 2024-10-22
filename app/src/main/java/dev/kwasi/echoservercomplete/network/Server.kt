@@ -117,7 +117,7 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
     private fun listenForMessages(clientSocket: Socket) {
         val reader = clientSocket.getInputStream().bufferedReader()
         try {
-            while (!clientSocket.isClosed) {
+            while (!clientSocket.isClosed && isRunning) {
                 val receivedMessage = reader.readLine()
                 if (receivedMessage != null) {
                     Log.e("Server", "Received: $receivedMessage")
@@ -126,7 +126,7 @@ class Server(private val iFaceImpl:NetworkMessageInterface) {
                 }
             }
         } catch (e: Exception) {
-            Log.e("Client", "Error receiving message: ${e.message}")
+            Log.e("Server", "Error receiving message: ${e.message}")
         }
     }
 
