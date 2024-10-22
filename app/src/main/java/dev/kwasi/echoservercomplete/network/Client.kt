@@ -7,6 +7,14 @@ import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.net.Socket
 import kotlin.concurrent.thread
+import java.security.MessageDigest
+import kotlin.text.Charsets.UTF_8
+import javax.crypto.spec.SecretKeySpec
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.SecretKey
+import javax.crypto.Cipher
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 class Client(private val networkMessageInterface: NetworkMessageInterface, var studentId: String){
     private lateinit var clientSocket: Socket
@@ -14,6 +22,9 @@ class Client(private val networkMessageInterface: NetworkMessageInterface, var s
     private lateinit var writer: BufferedWriter
     private val PORT = 9999
     var ip:String = ""
+    private val studentIdHash = hashStudentId(studentId)
+    private val aesKey = generateAESKey(studentIdHash)
+    private val aesIv = generateIV(studentIdHash)
 
     init {
         thread {
@@ -25,6 +36,15 @@ class Client(private val networkMessageInterface: NetworkMessageInterface, var s
             val handshakeAsStr = Gson().toJson(handshakeContent)
             writer.write("$handshakeAsStr\n")
             writer.flush()
+
+            val studentIdHash = hashStudentId(studentId)
+            val aesKey = generateAESKey(studentIdHash)
+            val aesIv = generateIV(studentIdHash)
+            val R = reader.readLine()
+            val encryptedText = encryptMessage(R, aesKey, aesIv)
+            writer.write(encryptedText)
+            writer.flush()
+
             while(true){
                 try{
                     val serverResponse = reader.readLine()
@@ -47,10 +67,42 @@ class Client(private val networkMessageInterface: NetworkMessageInterface, var s
                 throw Exception("We aren't currently connected to the server!")
             }
             val contentAsStr:String = Gson().toJson(content)
-            writer.write("$contentAsStr\n")
+            val encryptedText = encryptMessage(contentAsStr,aesKey, aesIv)
+            writer.write(encryptedText)
             writer.flush()
         }
 
+    }
+
+    fun getFirstNChars(str: String, n:Int) = str.substring(0,n)
+    fun ByteArray.toHex() = joinToString(separator = "") { byte -> "%02x".format(byte) }
+
+    fun hashStudentId(studentID : String) : String{
+        val algorithm = "SHA-256"
+        val hashedString = MessageDigest.getInstance(algorithm).digest(studentID.toByteArray(UTF_8))
+        return hashedString.toHex();
+    }
+
+    fun generateAESKey(seed: String): SecretKeySpec {
+        val first32Chars = getFirstNChars(seed, 32)
+        val aesKey = SecretKeySpec(first32Chars.toByteArray(), "AES")
+        return aesKey
+    }
+
+    fun generateIV(seed: String): IvParameterSpec {
+        val first16Chars = getFirstNChars(seed, 16)
+        return IvParameterSpec(first16Chars.toByteArray())
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    fun encryptMessage(plaintext: String, aesKey:SecretKey, aesIv: IvParameterSpec):String{
+        val plainTextByteArr = plaintext.toByteArray()
+
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
+        cipher.init(Cipher.ENCRYPT_MODE, aesKey, aesIv)
+
+        val encrypt = cipher.doFinal(plainTextByteArr)
+        return Base64.Default.encode(encrypt)
     }
 
     fun close(){
