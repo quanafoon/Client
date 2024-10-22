@@ -8,6 +8,7 @@ import android.net.wifi.p2p.WifiP2pManager
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -44,6 +45,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     private var client: Client? = null
     private var deviceIp: String = ""
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -57,8 +59,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val manager: WifiP2pManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         val channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
-
-        peerListAdapter = PeerListAdapter(this)
+        val idEditText: EditText = findViewById(R.id.etStudentID)
+        peerListAdapter = PeerListAdapter(this, idEditText )
         val rvPeerList: RecyclerView= findViewById(R.id.rvPeerList)
         rvPeerList.adapter = peerListAdapter
         rvPeerList.layoutManager = LinearLayoutManager(this)
@@ -67,7 +69,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val rvChatList: RecyclerView = findViewById(R.id.rvChat)
         rvChatList.adapter = chatListAdapter
         rvChatList.layoutManager = LinearLayoutManager(this)
-    }
+
+        }
 
     override fun onResume() {
         super.onResume()
@@ -82,10 +85,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             unregisterReceiver(it)
         }
     }
-    fun createGroup(view: View) {
-        wfdManager?.createGroup()
-    }
 
+    @Suppress("UNUSED_PARAMETER")
     fun discoverNearbyPeers(view: View) {
         wfdManager?.discoverPeers()
     }
@@ -112,6 +113,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         wfdConnectedView.visibility = if(wfdHasConnection)View.VISIBLE else View.GONE
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun sendMessage(view: View) {
         val etMessage:EditText = findViewById(R.id.etMessage)
         val etString = etMessage.text.toString()
@@ -163,9 +165,9 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             client = Client(this, id)
             deviceIp = client!!.ip
         }
-        val etNetworkName : EditText  = findViewById(R.id.etNetworkName)
-        val networkName = groupInfo!!.networkName
-        etNetworkName.setText(networkName)
+        val etNetworkName : TextView  = findViewById(R.id.ClassTitle)
+        val networkName = "Currently Attending - ${groupInfo!!.networkName}"
+        etNetworkName.text = networkName
     }
 
     override fun onDeviceStatusChanged(thisDevice: WifiP2pDevice) {
@@ -174,6 +176,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     }
 
     override fun onPeerClicked(peer: WifiP2pDevice) {
+
         wfdManager?.connectToPeer(peer)
     }
 

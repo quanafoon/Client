@@ -73,7 +73,7 @@
             android:layout_marginTop="152dp"
             android:ems="10"
             android:hint="Enter Student ID..."
-            android:inputType="text"
+            android:inputType="numberDecimal"
             app:layout_constraintBottom_toTopOf="@+id/ClassesTitle"
             app:layout_constraintEnd_toStartOf="@+id/SearchClassesBtn"
             app:layout_constraintHorizontal_bias="0.0"
@@ -153,10 +153,10 @@
 
         <TextView
             android:id="@+id/ClassTitle"
-            android:layout_width="178dp"
+            android:layout_width="match_parent"
             android:layout_height="69dp"
             android:gravity="center"
-            android:text="Currently Attending"
+            android:textAlignment="center"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -196,24 +196,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:onClick="sendMessage"
-                android:text="Send" />
+                android:text="@string/send_button_string" />
 
         </LinearLayout>
 
-        <EditText
-            android:id="@+id/etNetworkName"
-            android:layout_width="198dp"
-            android:layout_height="69dp"
-            android:layout_marginStart="4dp"
-            android:ems="10"
-            android:inputType="text"
-            android:text="network name"
-            android:textSize="16sp"
-            app:layout_constraintBottom_toTopOf="@+id/rvChat"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/ClassTitle"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.086" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
