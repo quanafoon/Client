@@ -7,13 +7,11 @@ import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -23,7 +21,6 @@ import dev.kwasi.echoservercomplete.chatlist.ChatListAdapter
 import dev.kwasi.echoservercomplete.models.ContentModel
 import dev.kwasi.echoservercomplete.network.Client
 import dev.kwasi.echoservercomplete.network.NetworkMessageInterface
-import dev.kwasi.echoservercomplete.network.Server
 import dev.kwasi.echoservercomplete.peerlist.PeerListAdapter
 import dev.kwasi.echoservercomplete.peerlist.PeerListAdapterInterface
 import dev.kwasi.echoservercomplete.wifidirect.WifiDirectInterface
@@ -45,10 +42,11 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     private var wfdAdapterEnabled = false
     private var wfdHasConnection = false
     private var hasDevices = false
-    private var server: Server? = null
     private var client: Client? = null
     private var deviceIp: String = ""
-    private lateinit var startClassBtn : Button
+    private lateinit var manager: WifiP2pManager
+    private lateinit var channel: WifiP2pManager.Channel
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,22 +58,22 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             insets
         }
 
-        val manager: WifiP2pManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
-        val channel = manager.initialize(this, mainLooper, null)
+        manager= getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
-
+        val idEditText: EditText = findViewById(R.id.etStudentID)
+        peerListAdapter = PeerListAdapter(this, idEditText )
+        val rvPeerList: RecyclerView= findViewById(R.id.rvPeerList)
+        rvPeerList.adapter = peerListAdapter
+        rvPeerList.layoutManager = LinearLayoutManager(this)
 
         chatListAdapter = ChatListAdapter()
         val rvChatList: RecyclerView = findViewById(R.id.rvChat)
         rvChatList.adapter = chatListAdapter
         rvChatList.layoutManager = LinearLayoutManager(this)
 
-        startClassBtn = findViewById(R.id.startClassBtn)
-
-        startClassBtn.setOnClickListener{ view : View ->
-                createGroup(view)
+        wfdManager?.disconnect()
         }
-    }
 
     override fun onResume() {
         super.onResume()
@@ -90,14 +88,14 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             unregisterReceiver(it)
         }
     }
-    fun createGroup(view: View) {
-        wfdManager?.createGroup()
-    }
 
+    @Suppress("UNUSED_PARAMETER")
     fun discoverNearbyPeers(view: View) {
+        val text = "If you cannot find the device you are looking for toggle wifi on and off adn try again"
+        val toast = Toast.makeText(this, text, Toast.LENGTH_SHORT)
+        toast.show()
         wfdManager?.discoverPeers()
     }
-
 
     private fun updateUI(){
         //The rules for updating the UI are as follows:
@@ -114,10 +112,23 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val wfdNoConnectionView:ConstraintLayout = findViewById(R.id.clNoWifiDirectConnection)
         wfdNoConnectionView.visibility = if (wfdAdapterEnabled && !wfdHasConnection) View.VISIBLE else View.GONE
 
+        val rvPeerList: RecyclerView= findViewById(R.id.rvPeerList)
+        rvPeerList.visibility = if (wfdAdapterEnabled && !wfdHasConnection && hasDevices) View.VISIBLE else View.GONE
+
         val wfdConnectedView:ConstraintLayout = findViewById(R.id.clHasConnection)
         wfdConnectedView.visibility = if(wfdHasConnection)View.VISIBLE else View.GONE
     }
 
+    @Suppress("UNUSED_PARAMETER")
+    fun sendMessage(view: View) {
+        val etMessage:EditText = findViewById(R.id.etMessage)
+        val etString = etMessage.text.toString()
+        val content = ContentModel(etString, deviceIp)
+        etMessage.text.clear()
+        client?.sendMessage(content)
+        chatListAdapter?.addItemToEnd(content)
+
+    }
 
     override fun onWiFiDirectStateChanged(isEnabled: Boolean) {
         wfdAdapterEnabled = isEnabled
@@ -152,16 +163,27 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         wfdHasConnection = groupInfo != null
 
         if (groupInfo == null){
-            server?.close()
             client?.close()
-        } else if (groupInfo.isGroupOwner && server == null){
-            server = Server(this)
-            deviceIp = "192.168.49.1"
+            chatListAdapter?.clearChat()
+            resetP2P()
+            updateUI()
         } else if (!groupInfo.isGroupOwner && client == null) {
-            client = Client(this)
+            val idEditText: EditText = findViewById(R.id.etStudentID)
+            val id = idEditText.text.toString()
+            client = Client(this, id)
             deviceIp = client!!.ip
+            val etNetworkName : TextView  = findViewById(R.id.ClassTitle)
+            val networkName = "Currently Attending - ${groupInfo.networkName}"
+            etNetworkName.text = networkName
         }
     }
+
+    fun resetP2P() {
+        // Reinitialize the manager and channel
+        manager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        channel = manager.initialize(this, mainLooper, null)
+    }
+
 
     override fun onDeviceStatusChanged(thisDevice: WifiP2pDevice) {
         val toast = Toast.makeText(this, "Device parameters have been updated" , Toast.LENGTH_SHORT)

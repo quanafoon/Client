@@ -13,6 +13,8 @@ import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.WifiP2pManager.ActionListener
 import android.net.wifi.p2p.WifiP2pManager.P2pStateListener
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 
 /// This [WifiDirectManager] class is a [BroadcastReceiver] that listens for events fired from the
@@ -24,6 +26,7 @@ class WifiDirectManager(
     private val iFaceImpl: WifiDirectInterface
 ):BroadcastReceiver() {
     var groupInfo: WifiP2pGroup? = null
+    private var groupRemoving = false
 
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
@@ -34,6 +37,7 @@ class WifiDirectManager(
                 iFaceImpl.onWiFiDirectStateChanged(isWifiP2pEnabled)
                 Log.e("WFDManager","The WiFi direct adapter state has changed to $isWifiP2pEnabled")
             }
+
 
             WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> {
                 manager.requestPeers(channel) { peers: WifiP2pDeviceList? ->
@@ -51,14 +55,22 @@ class WifiDirectManager(
                     Build.VERSION.SDK_INT >= 33 -> intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_GROUP, WifiP2pGroup::class.java)!!
                     else -> @Suppress("DEPRECATION") intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_GROUP)!!
                 }
-                if (groupInfo != tmpGroupInfo){
-                    groupInfo = tmpGroupInfo
-                    Log.e("WFDManager","The group status has changed")
-                    iFaceImpl.onGroupStatusChanged(groupInfo)
+
+                if(groupInfo != null && tmpGroupInfo == null) {
+                    Log.e("WFDManager", "GO has disconnected")
+                    iFaceImpl.onGroupStatusChanged(null)
+
+                }else{
+                    if (groupInfo != tmpGroupInfo) {
+                        groupInfo = tmpGroupInfo
+                        Log.e("WFDManager", "The group status has changed")
+                        iFaceImpl.onGroupStatusChanged(groupInfo)
+                    }
                 }
 
-
             }
+
+
             WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> {
                 val thisDevice = when{
                     Build.VERSION.SDK_INT >= 33 -> intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE, WifiP2pDevice::class.java)!!
@@ -70,6 +82,7 @@ class WifiDirectManager(
             }
         }
     }
+
 
     @SuppressLint("MissingPermission")
     fun createGroup(){
@@ -113,7 +126,67 @@ class WifiDirectManager(
             }
         })
     }
+    private  fun goDisconnect(){
+        if (!groupRemoving) {
+            groupRemoving = true
 
+            try {
+                manager.removeGroup(channel, object : ActionListener {
+
+                    override fun onSuccess() {
+                        Log.e("WFDManager", "Successfully disconnected from the group")
+                        groupRemoving = false
+                        groupInfo = null
+                    }
+
+                    override fun onFailure(reason: Int) {
+                        Log.e(
+                            "WFDManager",
+                            "An error occurred while trying to disconnect from the group"
+                        )
+                        groupRemoving = false
+                        when (reason) {
+                            WifiP2pManager.BUSY -> { Log.e(
+                                "WFDMANAGER",
+                                "Failed tp remove group manager busy"
+
+                            )
+                                retryRemove()
+                            }
+
+
+                            WifiP2pManager.ERROR -> Log.e(
+                                "WFDMANAGER",
+                                "Failed to remove group error occured."
+                            )
+
+                            WifiP2pManager.P2P_UNSUPPORTED -> Log.e(
+                                "WifiP2P",
+                                "Failed to remove group: P2P unsupported."
+                            )
+
+                            else -> Log.e(
+                                "WifiP2P",
+                                "Failed to remove group: Unknown reason ($reason)."
+                            )
+                        }
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e("WFDMANAGER", "Error removing group: ${e.message}")
+                groupRemoving = false
+            }
+        }else {
+            Log.d("WFDMANAGER", "Group removal already in progress")
+        }
+    }
+
+    private fun retryRemove(){
+        Handler(Looper.getMainLooper()).postDelayed({
+            goDisconnect()  // Attempt to remove the group again
+        }, 2000)  // Retry after 2 seconds
+
+    }
     fun disconnect(){
         manager.removeGroup(channel, object : ActionListener {
             override fun onSuccess() {

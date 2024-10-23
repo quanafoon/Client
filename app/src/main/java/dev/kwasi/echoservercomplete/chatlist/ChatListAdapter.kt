@@ -41,4 +41,10 @@ class ChatListAdapter : RecyclerView.Adapter<ChatListAdapter.ViewHolder>(){
         chatList.add(contentModel)
         notifyItemInserted(chatList.size)
     }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun clearChat() {
+        chatList.clear()
+        notifyDataSetChanged()
+    }
 }

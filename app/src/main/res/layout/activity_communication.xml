@@ -49,10 +49,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="32dp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0">
@@ -63,23 +61,78 @@
             android:layout_height="wrap_content"
             android:text="Attendance and Feedback System"
             android:textSize="34sp"
-            app:layout_constraintBottom_toTopOf="@+id/startClassBtn"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.34" />
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:id="@+id/etStudentID"
+            android:layout_width="200dp"
+            android:layout_height="65dp"
+            android:layout_marginTop="152dp"
+            android:ems="10"
+            android:hint="Enter Student ID..."
+            android:inputType="numberDecimal"
+            app:layout_constraintBottom_toTopOf="@+id/ClassesTitle"
+            app:layout_constraintEnd_toStartOf="@+id/SearchClassesBtn"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/Title"
+            app:layout_constraintVertical_bias="0.106" />
 
         <Button
-            android:id="@+id/startClassBtn"
-            android:layout_width="198dp"
-            android:layout_height="93dp"
-            android:text="START CLASS"
+            android:id="@+id/SearchClassesBtn"
+            android:layout_width="117dp"
+            android:layout_height="101dp"
+            android:onClick="discoverNearbyPeers"
+            android:text="Search for Classes"
+            android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.461" />
+            app:layout_constraintTop_toBottomOf="@+id/Title"
+            app:layout_constraintVertical_bias="0.243" />
+
+        <TextView
+            android:id="@+id/ClassesTitle"
+            android:layout_width="151dp"
+            android:layout_height="30dp"
+            android:text="Nearby Classes"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.069"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/Title"
+            app:layout_constraintVertical_bias="0.606" />
+
+        <TextView
+            android:id="@+id/StudentTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Student"
+            android:textSize="20sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.097"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/Title"
+            app:layout_constraintVertical_bias="0.113" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPeerList"
+            android:layout_width="293dp"
+            android:layout_height="176dp"
+            android:layout_marginTop="129dp"
+            android:layout_marginBottom="32dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.259"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/ClassesTitle"
+            app:layout_constraintVertical_bias="1.0" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -89,20 +142,36 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="24dp"
-        android:visibility="gone"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0">
+
+
+        <TextView
+            android:id="@+id/ClassTitle"
+            android:layout_width="match_parent"
+            android:layout_height="69dp"
+            android:gravity="center"
+            android:textAlignment="center"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvChat"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toBottomOf="@+id/llChatSend"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="1.0"
-            tools:layout_editor_absoluteX="32dp" />
+            android:layout_width="377dp"
+            android:layout_height="507dp"
+
+            app:layout_constraintBottom_toTopOf="@id/llChatSend"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ClassTitle"
+            app:layout_constraintVertical_bias="1.0" />
 
         <LinearLayout
             android:id="@+id/llChatSend"
@@ -111,7 +180,26 @@
             android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent">
+
+
+            <EditText
+                android:id="@+id/etMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:hint="Type a message"
+                android:inputType="text" />
+
+            <Button
+                android:id="@+id/sendBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="sendMessage"
+                android:text="@string/send_button_string" />
+
+        </LinearLayout>
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
