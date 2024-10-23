@@ -44,6 +44,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     private var hasDevices = false
     private var client: Client? = null
     private var deviceIp: String = ""
+    private lateinit var manager: WifiP2pManager
+    private lateinit var channel: WifiP2pManager.Channel
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,8 +58,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             insets
         }
 
-        val manager: WifiP2pManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
-        val channel = manager.initialize(this, mainLooper, null)
+        manager= getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
         val idEditText: EditText = findViewById(R.id.etStudentID)
         peerListAdapter = PeerListAdapter(this, idEditText )
@@ -70,6 +72,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         rvChatList.adapter = chatListAdapter
         rvChatList.layoutManager = LinearLayoutManager(this)
 
+        wfdManager?.disconnect()
         }
 
     override fun onResume() {
@@ -88,6 +91,9 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
 
     @Suppress("UNUSED_PARAMETER")
     fun discoverNearbyPeers(view: View) {
+        val text = "If you cannot find the device you are looking for toggle wifi on and off adn try again"
+        val toast = Toast.makeText(this, text, Toast.LENGTH_SHORT)
+        toast.show()
         wfdManager?.discoverPeers()
     }
 
@@ -158,17 +164,26 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
 
         if (groupInfo == null){
             client?.close()
-
+            chatListAdapter?.clearChat()
+            resetP2P()
+            updateUI()
         } else if (!groupInfo.isGroupOwner && client == null) {
             val idEditText: EditText = findViewById(R.id.etStudentID)
             val id = idEditText.text.toString()
             client = Client(this, id)
             deviceIp = client!!.ip
+            val etNetworkName : TextView  = findViewById(R.id.ClassTitle)
+            val networkName = "Currently Attending - ${groupInfo.networkName}"
+            etNetworkName.text = networkName
         }
-        val etNetworkName : TextView  = findViewById(R.id.ClassTitle)
-        val networkName = "Currently Attending - ${groupInfo!!.networkName}"
-        etNetworkName.text = networkName
     }
+
+    fun resetP2P() {
+        // Reinitialize the manager and channel
+        manager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        channel = manager.initialize(this, mainLooper, null)
+    }
+
 
     override fun onDeviceStatusChanged(thisDevice: WifiP2pDevice) {
         val toast = Toast.makeText(this, "Device parameters have been updated" , Toast.LENGTH_SHORT)
@@ -176,7 +191,6 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     }
 
     override fun onPeerClicked(peer: WifiP2pDevice) {
-
         wfdManager?.connectToPeer(peer)
     }
 

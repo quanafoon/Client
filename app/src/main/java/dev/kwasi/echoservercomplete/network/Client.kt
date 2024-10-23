@@ -25,10 +25,12 @@ class Client(private val networkMessageInterface: NetworkMessageInterface, var s
     private val studentIdHash = hashStudentId(studentId)
     private val aesKey = generateAESKey(studentIdHash)
     private val aesIv = generateIV(studentIdHash)
+    private var isRunning = false
 
     init {
         thread {
             clientSocket = Socket("192.168.49.1", PORT)
+            isRunning = true
             reader = clientSocket.inputStream.bufferedReader()
             writer = clientSocket.outputStream.bufferedWriter()
             ip = clientSocket.inetAddress.hostAddress!!
@@ -49,7 +51,7 @@ class Client(private val networkMessageInterface: NetworkMessageInterface, var s
             writer.write("$encryptedContentStr\n")
             writer.flush()
 
-            while(true){
+            while(isRunning){
                 try{
                     val serverResponse = reader.readLine()
                     if (serverResponse != null){
@@ -81,22 +83,22 @@ class Client(private val networkMessageInterface: NetworkMessageInterface, var s
 
     }
 
-    fun getFirstNChars(str: String, n:Int) = str.substring(0,n)
+    private fun getFirstNChars(str: String, n:Int) = str.substring(0,n)
     fun ByteArray.toHex() = joinToString(separator = "") { byte -> "%02x".format(byte) }
 
-    fun hashStudentId(studentID : String) : String{
+    private fun hashStudentId(studentID : String) : String{
         val algorithm = "SHA-256"
         val hashedString = MessageDigest.getInstance(algorithm).digest(studentID.toByteArray(UTF_8))
         return hashedString.toHex();
     }
 
-    fun generateAESKey(seed: String): SecretKeySpec {
+    private fun generateAESKey(seed: String): SecretKeySpec {
         val first32Chars = getFirstNChars(seed, 32)
         val aesKey = SecretKeySpec(first32Chars.toByteArray(), "AES")
         return aesKey
     }
 
-    fun generateIV(seed: String): IvParameterSpec {
+    private fun generateIV(seed: String): IvParameterSpec {
         val first16Chars = getFirstNChars(seed, 16)
         return IvParameterSpec(first16Chars.toByteArray())
     }
@@ -126,6 +128,10 @@ class Client(private val networkMessageInterface: NetworkMessageInterface, var s
     }
 
     fun close(){
+        isRunning = false
         clientSocket.close()
+        reader.close()
+        writer.close()
+
     }
 }
